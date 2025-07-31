@@ -1,10 +1,12 @@
 import checkConnection from "./DB/ConnectionDB.js";
+import authRouter from "./Modules/auth/auth.controller.js";
 import userRouter from "./Modules/Users/user.controller.js";
 
 export const bootstrap = async (app, express) => {
   const Port = process.env.PORT || 3000;
   app.use(express.json());
   await checkConnection();
+  app.use("/auth",authRouter);
   app.use("/users",userRouter);
 
 

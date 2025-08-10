@@ -7,14 +7,14 @@ const transporter = nodemailer.createTransport({
   secure: true, // true for 465, false for other ports
   service: "gmail",
   auth: {
-    user: "zeyadaltantawy365@gmail.com",
-    pass: "klntcirgqakjaqfm",
+    user: process.env.SEND_EMAIL,
+    pass: process.env.SEND_EMAIL_PASSWORD, // generated ethereal password
   },
 });
 
 // Wrap in an async IIFE so we can use await.
   const info = await transporter.sendMail({
-    from: `"Zeyad Altantawy" <zeyadaltantawy365@gmail.com>`,
+    from: `"Zeyad Altantawy" <${process.env.SEND_EMAIL}>`,
     to: to||"zeyadaltantawy365@gmail.com",
     subject:subject || "Email confirmation ✔",
     text: text || "Confirm your email?", // plain‑text body

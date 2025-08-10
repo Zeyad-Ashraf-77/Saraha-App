@@ -1,5 +1,5 @@
 import userModel from "../DB/Models/user.model.js";
-import jwt from "jsonwebtoken";
+import { verifyToken } from "../Utils/token/index.js";
 export const authentication = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
@@ -9,13 +9,13 @@ export const authentication = async (req, res, next) => {
     }
     let signature = "";
     if (prefix == "Bearer") {
-      signature = "Zeyad_123";
+      signature = process.env.ACCESS_TOKEN_USER;
     } else if (prefix == "BearerAdmin") {
-      signature = "Zeyad_123_admin";
+      signature = process.env.ACCESS_TOKEN_ADMIN;
     } else {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const decodedToken = jwt.verify(token, signature);
+    const decodedToken = await verifyToken(token, signature);
     const user = await userModel.findById(decodedToken.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });

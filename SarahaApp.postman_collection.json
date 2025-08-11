@@ -1,0 +1,187 @@
+{
+	"info": {
+		"_postman_id": "6776469d-976d-4136-9535-76d62e7f7643",
+		"name": "SarahaApp",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40304579"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Sign Up",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Zeyad\",\r\n    \"email\": \"za5767608@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"rePassword\": \"123123\",\r\n    \"phone\": \"01065767412\",\r\n    \"age\":22,\r\n    \"gender\": \"male\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/auth/signUp",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"auth",
+								"signUp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "sign in",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"za5767608@gmail.com\",\r\n    \"password\": \"123123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/auth/signin",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"auth",
+								"signin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OGI3MTAzNzRiYzhhOWUzYTE2Njc4NyIsImVtYWlsIjoiemV5YWQxMjNAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NTM5Njg5MTMsImV4cCI6MTc1Mzk3MjUxM30.14OC2AiA8-WVSfZNkKmIOkCMlV0uIJaKuIuMn9CIqbM",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"oldPassword\":\"123123\",\r\n    \"newPassword\":\"123123123\",\r\n    \"reNewPassword\":\"123123123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/auth/updatePassword",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"auth",
+								"updatePassword"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm Email",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\":\"za5767608@gmail.com\",\r\n    \"otp\":\"18110\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/auth/confirmEmail",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"auth",
+								"confirmEmail"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "get profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OWEzMmQ3N2IyMTRiNmFhZTkzZjk4OCIsImVtYWlsIjoiemE1NzY3NjA4QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzU0OTM2MDU3LCJleHAiOjE3NTQ5Mzk2NTd9.egCuNC_kZTBY89ZN6ZBO5B9IZO33802SyyMR_oYs4j4",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{host}}/users/profile",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "host",
+			"value": "localhost:3000",
+			"type": "string"
+		}
+	]
+}

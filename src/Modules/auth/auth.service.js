@@ -1,9 +1,12 @@
 import userModel, { RoleUser } from "../../DB/Models/user.model.js";
-import { sendEmail } from "../../services/sendEmail.js";
 import { createToken, verifyToken } from "../../Utils/token/index.js";
 import { compare, hash } from "../../Utils/hash/index.js";
 import { encrypt } from "../../Utils/encrypt/index.js";
 import { eventEmitter } from "../../Utils/EventEmail/index.js";
+import { customAlphabet, nanoid } from "nanoid";
+import bcrypt from "bcrypt";
+
+
 export const signUp = async (req, res, next) => {
   try {
     const { name, email, password, rePassword, age, gender, phone } = req.body;
@@ -23,10 +26,11 @@ export const signUp = async (req, res, next) => {
     if (!hashedPassword) {
       return res.status(500).json({ message: "Error hashing password" });
     }
-    // const phoneCrypt = CryptoJS.AES.encrypt(phone,process.env.cryptKey).toString();
     const phoneCrypt = await encrypt(phone,process.env.cryptKey)
-    eventEmitter.emit("sendEmail", {email});
-    
+    const otp = customAlphabet("0123456789", 5)();
+    const hashOtp =  await bcrypt.hashSync(otp, Number(process.env.saltOrRounds))
+    eventEmitter.emit("sendEmail", {email,otp});
+     
     const user = await userModel.create({
       name,
       email,
@@ -34,6 +38,7 @@ export const signUp = async (req, res, next) => {
       age,
       gender,
       phone: phoneCrypt,
+      otp:hashOtp  
     });
     res.status(201).json({ message: "User created successfully", user });
   } catch (error) {
@@ -45,16 +50,23 @@ export const signUp = async (req, res, next) => {
 
  export const confirmEmail = async (req, res, next) => {
   try {
-    const { token } = req.params;
-    if (!token) {
+    const { email,otp } = req.body;
+    if (!email || !otp) {
       return res.status(400).json({ message: "Token not Found" });
     }
-    const decodedToken = await verifyToken(token, process.env.CONFIRM_TOKEN);
-    const user = await userModel.findOne({ email:decodedToken.email });
+    const user = await userModel.findOne({ email });
     if (!user) {
       return req.status(404).json({message:"user not exist or already confirmed"}) 
     }
+    if(user.conFirmed){
+      return res.status(400).json({message:"user already confirmed"}) 
+    }
+    const isMatch = await compare(otp, user.otp);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid otp" });
+    }
     user.conFirmed = true
+    user.otp = null
     await user.save();
     return res.status(200).json({message:"confirmed Success"})
   } catch (error) {

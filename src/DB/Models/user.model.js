@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema(
     age: { type: Number, required: true, min: 1, max: 120 },
     image:  String , // Optional field for user image
     phone: { type: String, required: true, unique: true },
+    otp:{
+      type: String,
+      default: null,
+    }
   },
   {
     timestamps: true,

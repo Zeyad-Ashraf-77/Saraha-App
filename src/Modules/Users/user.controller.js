@@ -5,5 +5,8 @@
  const router = Router();
  
  router.get("/profile",authentication,serviceUser.profile)
+ router.get("/profile/:id",serviceUser.shareProfile)
+ router.patch("/profile",authentication,serviceUser.updateProfile)
+ router.post("/logout",authentication,serviceUser.logout)
  
  export default router;

@@ -12,22 +12,22 @@ export const signUp = async (req, res, next) => {
     const { name, email, password, rePassword, age, gender, phone } = req.body;
     const isExists = await userModel.findOne({ email });
     if (isExists) {
-      return res.status(400).json({ message: "Email already exists" });
+      throw new Error("Email already exists" ,{cause:400});
     }
     const phoneIsExists = await userModel.findOne({ phone });
     if (phoneIsExists) {
-      return res.status(400).json({ message: "Phone number already exists" });
+      throw new Error("Phone number already exists",{cause:400});
     }
     if (password !== rePassword) {
-      return res.status(400).json({ message: "Passwords do not match" });
+      throw new Error("Passwords do not match",{cause:400});
     }
 
     const hashedPassword = await hash(password, process.env.saltOrRounds);
     if (!hashedPassword) {
-      return res.status(500).json({ message: "Error hashing password" });
+      throw new Error("Error hashing password",{cause:500});
     }
     const phoneCrypt = await encrypt(phone,process.env.cryptKey)
-    const otp = customAlphabet("0123456789", 5)();
+    const otp = customAlphabet("0123456789", 4)();
     const hashOtp =  await bcrypt.hashSync(otp, Number(process.env.saltOrRounds))
     eventEmitter.emit("sendEmail", {email,otp});
      
@@ -43,7 +43,7 @@ export const signUp = async (req, res, next) => {
     res.status(201).json({ message: "User created successfully", user });
   } catch (error) {
     console.error("Error creating user:", error);
-    res.status(500).json({ message: "Internal server error", error });
+    res.status(500).json({ message: "Internal server error", error : error.message ,stack:error.stack || "" });
   }
 };
 // ==================confirm email=====================
@@ -52,18 +52,18 @@ export const signUp = async (req, res, next) => {
   try {
     const { email,otp } = req.body;
     if (!email || !otp) {
-      return res.status(400).json({ message: "Token not Found" });
+      throw new Error("Token not Found",{cause:400});
     }
     const user = await userModel.findOne({ email });
     if (!user) {
-      return req.status(404).json({message:"user not exist or already confirmed"}) 
+      throw new Error("user not exist or already confirmed",{cause:400}) 
     }
     if(user.conFirmed){
-      return res.status(400).json({message:"user already confirmed"}) 
+      throw new Error("user already confirmed",{cause:400}) 
     }
     const isMatch = await compare(otp, user.otp);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid otp" });
+      throw new Error("Invalid otp",{cause:400});
     }
     user.conFirmed = true
     user.otp = null
@@ -71,56 +71,131 @@ export const signUp = async (req, res, next) => {
     return res.status(200).json({message:"confirmed Success"})
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "server error", error });
+    return res.status(500).json({ message: "server error",   error : error.message ,stack:error.stack || "" });
   }
 };
-
-export const signIn = async (req, res, next) => {
+// ==================sign in=====================
+export const signIn = async (req, res, next) => { 
   try {
     const { email, password } = req.body;
-    const user = await userModel.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    const user = await userModel.findOne({ email});
+    if (!user || !user.conFirmed) {
+      throw new Error("User not found or not confirmed",{cause:400});
     }
-    // const isPasswordValid = await bcrypt.compareSync(password, user.password);
     const isPasswordValid = await compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid password" });
+      throw new Error("Invalid password",{cause:400});
     }
 
-    const accessToken = await createToken({payload:{ id: user._id, email: user.email, role: user.role },SecretKey:user.role === RoleUser.admin ? process.env.ACCESS_TOKEN_ADMIN : process.env.ACCESS_TOKEN_USER,options :{ expiresIn: "1h" }} );
-    const refreshToken = await createToken({payload:{ id: user._id, email: user.email, role: user.role },SecretKey:user.role === RoleUser.admin ? process.env.REFRESH_TOKEN_ADMIN : process.env.REFRESH_TOKEN_USER,options :{ expiresIn: "1y" }});
+    const accessToken = await createToken({payload:{ id: user._id, email: user.email, role: user.role },SecretKey:user.role === RoleUser.admin ? process.env.ACCESS_TOKEN_ADMIN : process.env.ACCESS_TOKEN_USER,options :{ expiresIn: "1h", jwtid:nanoid() }} );
+    const refreshToken = await createToken({payload:{ id: user._id, email: user.email, role: user.role },SecretKey:user.role === RoleUser.admin ? process.env.REFRESH_TOKEN_ADMIN : process.env.REFRESH_TOKEN_USER,options :{ expiresIn: "1y", jwtid:nanoid() }});
 
     res
       .status(200)
       .json({ message: "Sign-in successful", accessToken, refreshToken });
   } catch (error) {
     console.error("Error during sign-in:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal server error",error : error.message ,stack:error.stack || "" });
   }
 };
-
+// ==================update password=====================
 export const UpdatePassword = async (req, res, next) => {
   try {
     const { oldPassword, newPassword, reNewPassword } = req.body;
     if (!oldPassword || !newPassword || !reNewPassword) {
-      return res.status(400).json({ message: "All fields are required" });
+      throw new Error("All fields are required",{cause:400});
     }
     if (newPassword !== reNewPassword) {
-      return res.status(400).json({ message: "Passwords do not match" });
+      throw new Error("Passwords do not match",{cause:400});
     }
     // req.user تم إضافته من الميدلوير
     const user = req.user;
     const isMatch = await compare(oldPassword, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Old password is incorrect" });
+      throw new Error("Old password is incorrect",{cause:400});
     }
     const hashedPassword = await hash(newPassword, process.env.saltOrRounds || 10);
     user.password = hashedPassword;
     await user.save();
-    res.status(200).json({ message: "Password updated successfully" });
+    res.status(200).json({ message: "Password updated successfully",user });
   } catch (error) {
     console.error("Error updating password:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal server error",error : error.message ,stack:error.stack || "" });
   }
 };
+
+export const refreshToken = async (req, res, next) => {
+  try {
+    const { authorization } = req.headers;
+    const [prefix, token] = authorization.split(" ") || [];
+    if (!prefix || !token) {
+      throw new Error("Unauthorized",{cause:401});
+    }
+    let signature = "";
+    if (prefix == "Bearer") {
+      signature = process.env.REFRESH_TOKEN_USER;
+    } else if (prefix == "BearerAdmin") {
+      signature = process.env.REFRESH_TOKEN_ADMIN;
+    } else {
+      throw new Error("Unauthorized",{cause:401});
+    }
+    const decodedToken = await verifyToken(token, signature);
+    const user = await userModel.findById(decodedToken.id);
+    if (!user) {
+      throw new Error("User not found",{cause:404});
+    }
+    const accessToken = await createToken({payload:{ id: user._id, email: user.email, role: user.role },SecretKey:user.role === RoleUser.admin ? process.env.ACCESS_TOKEN_ADMIN : process.env.ACCESS_TOKEN_USER,options :{ expiresIn: "1h", jwtid:nanoid() }} );
+    const refreshToken = await createToken({payload:{ id: user._id, email: user.email, role: user.role },SecretKey:user.role === RoleUser.admin ? process.env.REFRESH_TOKEN_ADMIN : process.env.REFRESH_TOKEN_USER,options :{ expiresIn: "1y", jwtid:nanoid() }});
+    res
+      .status(200)
+      .json({ message: "Refresh token successful", accessToken, refreshToken });
+  } catch (error) {
+    console.error("Error during refresh token:", error);
+    res.status(500).json({ message: "Internal server error",error : error.message ,stack:error.stack || "" });
+  }
+};
+// ==================forget password=====================  
+
+ export  const forgetPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      throw new Error("User not found",{cause:404});
+    }
+    const otp = customAlphabet("0123456789", 4)();
+    const hashOtp =  await bcrypt.hashSync(otp, Number(process.env.saltOrRounds))
+    eventEmitter.emit("forgetPassword", {email,otp});
+    user.otp = hashOtp
+    await user.save();
+    return res.status(200).json({message:"otp sent successfully"})
+  } catch (error) {
+    console.error("Error during forget password:", error);
+    res.status(500).json({ message: "Internal server error",error : error.message ,stack:error.stack || ""  });
+  }
+}
+// ==================reset password=====================  
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { email,otp,newPassword,reNewPassword } = req.body;
+    const user = await userModel.findOne({ email,otp:{$exists:true} });
+    if (!user||user.otp === null || user.otp === undefined || user.otp === "") {
+      throw new Error("User not found or invalid otp",{cause:404});
+    }
+    const isMatch = await compare(otp, user.otp);
+    if (!isMatch) {
+      throw new Error("Invalid otp",{cause:400});
+    }
+    if (newPassword !== reNewPassword) {
+      throw new Error("Passwords do not match",{cause:400});
+    }
+    const hashedPassword = await hash(newPassword, process.env.saltOrRounds || 10);
+    user.password = hashedPassword;
+    user.otp = {$unset:"otp"}
+    await user.save();
+    return res.status(200).json({message:"Password reset successfully"})
+  } catch (error) {
+    console.error("Error during forget password:", error);
+    res.status(500).json({ message: "Internal server error",error : error.message ,stack:error.stack });
+  }
+}
